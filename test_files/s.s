@@ -154,7 +154,7 @@ _l3:
 	DMB
 	DSB
 
-	eors r1, r2
+	eors r1, r2 @ done
 	eors r2, r3
 	eors r3, r4
 	eors r4, r5
@@ -167,87 +167,87 @@ _l3:
 	LDM r1!, {r2, r3, r4, r5, r6, r7}
 	LDM r2, {r1, r2, r3, r4, r5, r6, r7}
 
-	ldr r3, [r1, #4]
+	ldr r3, [r1, #4] @ done
 	ldr r4, [r2, #8]
 	ldr r5, [r3, #16]
 	ldr r6, [r4, #32]
 
-	ldr r3, [sp, #16]
+	ldr r3, [sp, #16] @ done
 	ldr r4, [sp, #32]
 	ldr r5, [sp, #64]
 	ldr r6, [sp, #128]
 
-	ldr r0, =0xdeadbeef 
+	ldr r0, =0xdeadbeef @ done
 	ldr r1, =0xcafebabe
 	ldr r2, =0xdeadbabe
 	ldr r3, =0xbabebeef
 
-	ldr r0, [r1, r2]
+	ldr r0, [r1, r2] @ done
 	ldr r2, [r3, r4]
 	ldr r4, [r5, r6]
 	ldr r5, [r6, r7]
 
-	ldrb r0, [r1, #4]
+	ldrb r0, [r1, #4] @ done
 	ldrb r1, [r2, #8]
 	ldrb r2, [r3, #16]
 	ldrb r3, [r4, #31]
 
-	ldrb r0, [r1, r2]
+	ldrb r0, [r1, r2] @ done
 	ldrb r2, [r3, r4]
 	ldrb r4, [r5, r6]
 	ldrb r5, [r6, r7]
 
-	ldrh r0, [r1, #4]
+	ldrh r0, [r1, #4] @ done
 	ldrh r1, [r2, #8]
 	ldrh r2, [r3, #16]
 	ldrh r3, [r4, #30]
 
-	ldrh r0, [r1, r2]
+	ldrh r0, [r1, r2] @ done
 	ldrh r2, [r3, r4]
 	ldrh r4, [r5, r6]
 	ldrh r5, [r6, r7]
 
-	ldrsb r0, [r1, r2]
+	ldrsb r0, [r1, r2] @ done
 	ldrsb r2, [r3, r4]
 	ldrsb r4, [r5, r6]
 	ldrsb r5, [r6, r7]
 
-	ldrsh r0, [r1, r2]
+	ldrsh r0, [r1, r2] @ done
 	ldrsh r2, [r3, r4]
 	ldrsh r4, [r5, r6]
 	ldrsh r5, [r6, r7]
 
-	lsls r0, r1, #4 
+	lsls r0, r1, #4  @ done
 	lsls r1, r2, #8
 	lsls r2, r3, #16
 	lsls r3, r4, #31
 
-	lsls r0, r1
+	lsls r0, r1 @ done
 	lsls r1, r2
 	lsls r2, r3
 	lsls r3, r4
 
-	lsrs r0, r1, #4
+	lsrs r0, r1, #4 @ done
 	lsrs r1, r2, #8
 	lsrs r2, r3, #16
 	lsrs r3, r4, #31
 
-	lsrs r0, r1
+	lsrs r0, r1 @ done
 	lsrs r1, r2
 	lsrs r2, r3
 	lsrs r3, r4
 
-	movs r0, #32 
+	movs r0, #32 @ done
 	movs r1, #64
 	movs r2, #128
 	movs r3, #255
 
-	mov r0, r7 
+	mov r0, r7 @ done
 	mov r8, r1
 	mov r2, r9
 	mov r10, r3
 
-	movs r0, r1 
+	movs r0, r1 @ done
 	movs r1, r2
 	movs r2, r3
 	movs r3, r4
@@ -276,22 +276,27 @@ _l3:
 	msr primask, r1
 	msr control, r2
 
-	muls r0, r1, r0
+	muls r0, r1, r0 @ done
 	muls r2, r3, r2
 	muls r3, r4, r3
 	muls r4, r5, r4
 
-	mvns r0, r1
+	mvns r0, r1 @ done
 	mvns r2, r1
 	mvns r3, r2
 	mvns r4, r3
 
-	nop 
+	nop  @ done
 
 	orrs r0, r1 @ done
 	orrs r1, r2
 	orrs r2, r3
 	orrs r3, r4
+
+	negs r0, r1 @ done
+	negs r1, r2
+	negs r2, r3
+	negs r3, r4
 
 	pop {r0, r1, r2, r3, r4, r5}
 	pop {r3, r4, r5}
@@ -323,7 +328,7 @@ _l3:
 	rors r2, r3
 	rors r3, r4
 
-	rsbs r0, r1, #0
+	rsbs r0, r1, #0 @ done
 	rsbs r1, r2, #0
 	rsbs r2, r3, #0
 	rsbs r3, r4, #0

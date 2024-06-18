@@ -122,6 +122,8 @@ const (
 	bits15_8  uint16 = 0b1111_1111_0000_0000
 	bits15_7  uint16 = 0b1111_1111_1000_0000
 	bits15_6  uint16 = 0b1111_1111_1100_0000
+	bits15_5  uint16 = 0b1111_1111_1110_0000
+	bits15_4  uint16 = 0b1111_1111_1111_0000
 
 	bits10_0 uint16 = 0b0000_0111_1111_1111
 	bits7_0  uint16 = 0b0000_0000_1111_1111
@@ -247,7 +249,7 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 			out.text = fmt.Sprintf("SVC #%v", imm8)
 		} else {
 			offset := int32(int8(imm8)) << 1
-			out.text = fmt.Sprintf("B%v <PC, %v>", cond(c), offset)
+			out.text = fmt.Sprintf("B%v [PC, %v]", cond(c), offset)
 		}
 	}
 
@@ -313,10 +315,167 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 	if hw == 0b1111_0011_1011_1111 { // DSB
 	}
 
+	if hw&bits15_6 == 0b0100_0000_0100_0000 { // EORS <rdn>, <rm>
+		rm := (hw & bits5_3) >> 3
+		rdn := hw & bits2_0
+		out.text = fmt.Sprintf("EORS %v, %v", reg(rdn), reg(rm))
+	}
+
+	if hw == 0b1111_0011_1011_1111 { // ISB
+	}
+
 	if hw&bits15_11 == 0b1100_1000_0000_0000 { // LDM <rn>, <registers>
 		rn := (hw & bits10_8) >> 8
 		list := (hw & bits7_0)
 		out.text = fmt.Sprintf("LDM %v, %v", reg(rn), reglist(list))
+	}
+
+	if hw&bits15_11 == 0b0110_1000_0000_0000 { // LDR <rt>, [<rn>, #<imm5>]
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+		imm5 := (hw & bits10_6) >> 4
+		out.text = fmt.Sprintf("LDR %v, [%v, #%v]", reg(rt), reg(rn), imm5)
+	}
+
+	if hw&bits15_11 == 0b1001_1000_0000_0000 { // LDR <Rt>, [SP, #imm8]
+		rt := (hw & bits10_8) >> 8
+		imm8 := (hw & bits7_0) << 2
+		out.text = fmt.Sprintf("LDR %v, [SP, #%v]", reg(rt), imm8)
+	}
+
+	if hw&bits15_11 == 0b0100_1000_0000_0000 { // LDR <rt>, <label>
+		rt := (hw & bits10_8) >> 8
+		imm8 := hw & bits7_0 << 2
+		out.text = fmt.Sprintf("LDR %v, [PC, #%v]", reg(rt), imm8)
+	}
+
+	if hw&bits15_9 == 0b0101_1000_0000_0000 { // LDR <rt>, [<rn, <rm>]
+		rm := (hw & bits8_6) >> 6
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+		out.text = fmt.Sprintf("LDR %v, [%v, %v]", reg(rt), reg(rn), reg(rm))
+	}
+
+	if hw&bits15_11 == 0b0111_1000_0000_0000 { // LDRB <rt>, [<rn>, #<imm5>]
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+		imm5 := (hw & bits10_6) >> 6
+
+		out.text = fmt.Sprintf("LDRB %v, [%v, #%v]", reg(rt), reg(rn), imm5)
+	}
+
+	if hw&bits15_9 == 0b0101_1100_0000_0000 { // LDRB <rt>, [<rn>, <rm>]
+		rm := (hw & bits8_6) >> 6
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+
+		out.text = fmt.Sprintf("LDRB %v, [%v, %v]", reg(rt), reg(rn), reg(rm))
+	}
+
+	if hw&bits15_11 == 0b1000_1000_0000_0000 { // LDRH <rt>, [<rn>, #<imm5>]
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+		imm5 := (hw & bits10_6) >> 5
+
+		out.text = fmt.Sprintf("LDRH %v, [%v, #%v]", reg(rt), reg(rn), imm5)
+	}
+
+	if hw&bits15_9 == 0b0101_1010_0000_0000 { // LDRH <rt>, [<rn>, <rm>]
+		rm := (hw & bits8_6) >> 6
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+
+		out.text = fmt.Sprintf("LDRH %v, [%v, %v]", reg(rt), reg(rn), reg(rm))
+	}
+
+	if hw&bits15_9 == 0b0101_0110_0000_0000 { // LDRSB <rt>, [<rn>, <rm>]
+		rm := (hw & bits8_6) >> 6
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+
+		out.text = fmt.Sprintf("LDRSB %v, [%v, %v]", reg(rt), reg(rn), reg(rm))
+	}
+
+	if hw&bits15_9 == 0b0101_1110_0000_0000 { // LDRSH <rt>, [<rn>, <rm>]
+		rm := (hw & bits8_6) >> 6
+		rn := (hw & bits5_3) >> 3
+		rt := hw & bits2_0
+
+		out.text = fmt.Sprintf("LDRSH %v, [%v, %v]", reg(rt), reg(rn), reg(rm))
+	}
+
+	if hw&bits15_11 == 0b0000_0000_0000_0000 { // LSLS <rd>, <rm>, #<imm5>
+		rm := (hw & bits5_3) >> 3
+		rd := hw & bits2_0
+		imm5 := (hw & bits10_6) >> 6
+
+		if imm5 == 0b00000 { // MOV
+			out.text = fmt.Sprintf("MOV %v, %v", reg(rd), reg(rm))
+		} else {
+			out.text = fmt.Sprintf("LSLS %v, %v, #%v", reg(rd), reg(rm), imm5)
+		}
+	}
+
+	if hw&bits15_6 == 0b0100_0000_1000_0000 { // LSLS <rdn>, <rm>
+		rm := (hw & bits5_3) >> 3
+		rdn := hw & bits2_0
+		out.text = fmt.Sprintf("LSLS %v, %v", reg(rdn), reg(rm))
+	}
+
+	if hw&bits15_11 == 0b0000_1000_0000_0000 { // LSRS <rd>, <rm>, #<imm5>
+		rm := (hw & bits5_3) >> 3
+		rd := hw & bits2_0
+		imm5 := (hw & bits10_6) >> 6
+		shift_n := imm5
+		if imm5 == 0 {
+			shift_n = 32
+		}
+		out.text = fmt.Sprintf("LSRS %v, %v, #%v", reg(rd), reg(rm), shift_n)
+	}
+
+	if hw&bits15_6 == 0b0100_0000_1100_0000 { // LSRS <rdn>, <rm>
+		rm := (hw & bits5_3) >> 3
+		rdn := hw & bits2_0
+		out.text = fmt.Sprintf("LSRS %v, %v", reg(rdn), reg(rm))
+	}
+
+	if hw&bits15_11 == 0b0010_0000_0000_0000 { // MOVS <rd>, #<imm8>
+		rd := (hw & bits10_8) >> 8
+		imm8 := hw & bits7_0
+		out.text = fmt.Sprintf("MOV %v, #%v", reg(rd), imm8)
+	}
+
+	if hw&bits15_8 == 0b0100_0110_0000_0000 { // MOV <rd>, <rm>
+		D := (hw & bit7) >> 4
+		rd := (hw & bits2_0)
+		d := D | rd
+
+		rm := (hw & bits6_3) >> 3
+		out.text = fmt.Sprintf("MOV %v, %v", reg(d), reg(rm))
+	}
+
+	if hw == 0b1111_0011_1110_1111 { // MRS <rd>, <spec_reg>
+	}
+
+	if hw&bits15_4 == 0b1111_0011_1000_0000 { // MSR <spec_reg>, <rn>
+	}
+
+	if hw&bits15_6 == 0b0100_0011_0100_0000 { // MULS <rdm>, <rn>, <rdm>
+		rn := (hw & bits5_3) >> 3
+		rdm := hw & bits2_0
+		out.text = fmt.Sprintf("MULS %v, %v, %v", reg(rdm), reg(rn), reg(rdm))
+	}
+
+	if hw&bits15_6 == 0b0100_0011_1100_0000 { // MVN <rd>, <rm>
+		rm := (hw & bits5_3) >> 3
+		rd := hw & bits2_0
+		out.text = fmt.Sprintf("MVNS %v, %v", reg(rd), reg(rm))
+	}
+
+	if hw&bits15_6 == 0b0100_0010_0100_0000 {
+		rn := (hw & bits5_3) >> 3
+		rd := hw & bits2_0
+		out.text = fmt.Sprintf("NEG %v, %v", reg(rd), reg(rn))
 	}
 
 	if hw&bits15_6 == 0b0100_0011_0000_0000 { // ORR <rdn>, <rm>
