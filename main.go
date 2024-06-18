@@ -123,8 +123,9 @@ const (
 	bits15_7  uint16 = 0b1111_1111_1000_0000
 	bits15_6  uint16 = 0b1111_1111_1100_0000
 
-	bits7_0 uint16 = 0b0000_0000_1111_1111
-	bits6_0 uint16 = 0b0000_0000_0111_1111
+	bits10_0 uint16 = 0b0000_0111_1111_1111
+	bits7_0  uint16 = 0b0000_0000_1111_1111
+	bits6_0  uint16 = 0b0000_0000_0111_1111
 
 	bits6_3 uint16 = 0b0000_0000_0111_1000
 
@@ -190,7 +191,7 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 		out.text = fmt.Sprintf("ADD %v, SP, %v", reg(rd), imm8)
 	}
 
-	if hw&bits15_11 == 0b1011_0000_0000_0000 { // ADD SP, SP, #<imm7>
+	if hw&bits15_7 == 0b1011_0000_0000_0000 { // ADD SP, SP, #<imm7>
 		imm7 := (hw & bits6_0) << 2
 		out.text = fmt.Sprintf("ADD SP, SP, %v", imm7)
 	}
@@ -224,7 +225,11 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 		rd := hw & bits2_0
 		imm5 := (hw & bits10_6) >> 6
 
-		out.text = fmt.Sprintf("ASRS %v, %v, #%v", reg(rd), reg(rm), imm5)
+		shift_n := imm5
+		if imm5 == 0b00000 {
+			shift_n = 32
+		}
+		out.text = fmt.Sprintf("ASRS %v, %v, #%v", reg(rd), reg(rm), shift_n)
 	}
 
 	if hw&bits15_6 == 0b0100_0001_0000_0000 { // ASRS <Rdn>, <Rm>
@@ -235,15 +240,125 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 
 	if hw&bits15_12 == 0b1101_0000_0000_0000 { // B<c> <label>
 		c := uint8((hw & bits11_8) >> 8)
-		imm8 := int8((hw & bits7_0) << 1)
-		out.text = fmt.Sprintf("B%v <PC, %v>", cond(c), imm8)
+		imm8 := hw & bits7_0
+		if c == 0b1110 {
+			out.text = fmt.Sprintf("UDF #%v", imm8)
+		} else if c == 0b1111 {
+			out.text = fmt.Sprintf("SVC #%v", imm8)
+		} else {
+			offset := int32(int8(imm8)) << 1
+			out.text = fmt.Sprintf("B%v <PC, %v>", cond(c), offset)
+		}
+	}
+
+	if hw&bits15_11 == 0b1110_0000_0000_0000 { // b <label>
+		imm11 := hw & bits10_0
+		imm32 := int32(int16(imm11<<5) >> 4)
+		out.text = fmt.Sprintf("B <PC, %v>", imm32)
+	}
+
+	if hw&bits15_6 == 0b0100_0011_1000_0000 { // BICS <rdn>, <rm>
+		rm := (hw & bits5_3) >> 3
+		rdn := hw & bits2_0
+		out.text = fmt.Sprintf("BICS %v, %v", reg(rdn), reg(rm))
+	}
+
+	if hw&bits15_8 == 0b1011_1110_0000_0000 { // BKPT #<imm8>
+		imm8 := hw & bits7_0
+		out.text = fmt.Sprintf("BKPT #%v", imm8)
+	}
+
+	if hw&bits15_10 == 0b1111_0000_0000_0000 { // BL <label>
+	}
+
+	if hw&(bits15_7|bits2_0) == 0b0100_0111_1000_0000 { // BLX <rm>
+		rm := (hw & bits6_3) >> 3
+		out.text = fmt.Sprintf("BLX %v", reg(rm))
+	}
+
+	if hw&(bits15_7|bits2_0) == 0b0100_0111_0000_0000 { // BX <rm>
+		rm := (hw & bits6_3) >> 3
+		out.text = fmt.Sprintf("BX %v", reg(rm))
+	}
+
+	if hw&bits15_6 == 0b0100_0010_1100_0000 { // CMN <rn>, <rm>
+		rm := (hw & bits5_3) >> 3
+		rn := (hw & bits2_0)
+		out.text = fmt.Sprintf("CMN %v, %v", reg(rn), reg(rm))
+	}
+
+	if hw&bits15_11 == 0b0010_1000_0000_0000 { // CMP <rn>, #<imm8>
+		rn := (hw & bits10_8) >> 8
+		imm8 := (hw & bits7_0)
+		out.text = fmt.Sprintf("CMP %v, #%v", reg(rn), imm8)
+	}
+
+	if hw&bits15_6 == 0b0100_0010_1000_0000 { // CMP <rn>, <rm>
+		rm := (hw & bits5_3) >> 3
+		rn := hw & bits2_0
+		out.text = fmt.Sprintf("CMP %v, %v", reg(rn), reg(rm))
+	}
+
+	if hw&bits15_8 == 0b0100_0101_0000_0000 { // CMP <rn>, <rm>
+		N := (hw & bit7) >> 4
+		rn := hw & bits2_0
+		n := N | rn
+		rm := (hw & bits6_3) >> 3
+		out.text = fmt.Sprintf("CMP %v, %v", reg(n), reg(rm))
+	}
+
+	if hw == 0b1111_0011_1011_1111 { // DMB
+	}
+
+	if hw == 0b1111_0011_1011_1111 { // DSB
+	}
+
+	if hw&bits15_11 == 0b1100_1000_0000_0000 { // LDM <rn>, <registers>
+		rn := (hw & bits10_8) >> 8
+		list := (hw & bits7_0)
+		out.text = fmt.Sprintf("LDM %v, %v", reg(rn), reglist(list))
+	}
+
+	if hw&bits15_6 == 0b0100_0011_0000_0000 { // ORR <rdn>, <rm>
+		rdn := hw & bits2_0
+		rm := (hw & bits5_3) >> 3
+		out.text = fmt.Sprintf("ORRS %v, %v", reg(rdn), reg(rm))
+	}
+
+	if hw&bits15_6 == 0b1011_0010_0100_0000 { // SXTB <rd>, <rm>
+		rm := hw & bits5_3 >> 3
+		rd := hw & bits2_0
+		out.text = fmt.Sprintf("SXTB %v, %v", reg(rd), reg(rm))
+	}
+
+	if hw&bits15_6 == 0b1011_0010_0000_0000 { // SXTH <rd>, <rm
+		rm := hw & bits5_3 >> 3
+		rd := hw & bits2_0
+		out.text = fmt.Sprintf("SXTH %v, %v", reg(rd), reg(rm))
 	}
 	return true
 }
 
+func reglist(hw uint16) string {
+	out := "{"
+	var mask uint16 = 1
+	var i uint16 = 0
+	firsted := true
+	for i = 0; i < 16; i++ {
+		if hw&(mask<<i) > 0 {
+			if !firsted {
+				out += ", "
+			}
+			out += reg(i)
+			firsted = false
+		}
+	}
+	out += "}"
+	return out
+}
+
 func cond(nibble uint8) string {
 	cond := nibble & 0b0000_1111
-
 	switch cond {
 	case 0b0000:
 		return "EQ"

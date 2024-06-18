@@ -101,17 +101,17 @@ _l3:
 	bgt _l0
 	ble _l1
 
-	b _l0
+	b _l0 @ done
 	b _l1
 	b _l2
 	b _l3
 
-	bics r0, r1
+	bics r0, r1 @ done
 	bics r1, r2
 	bics r2, r3
 	bics r3, r4
 
-	bkpt #32
+	bkpt #32 @ done
 	bkpt #64
 	bkpt #128
 	bkpt #255
@@ -121,27 +121,32 @@ _l3:
 	bl _l2
 	bl _l3
 
-	blx r0
+	blx r0 @ done
 	blx r1
 	blx r2
 	blx r3
 
-	bx r0 
+	bx r0 @ done
 	bx r1
 	bx r2
 	bx r3
 
-	cmn r0, r1
+	cmn r0, r1 @ done
 	cmn r1, r2
 	cmn r2, r3
 	cmn r3, r4
 
-	cmp r0, #32 
-	cmp r1, #64
-	cmp r2, #128
-	cmp r3, #255
+	cmp r0, #32 @ done
+	cmp r1, #64 
+	cmp r2, #128 
+	cmp r3, #255 
 
-	cmp r0, r8
+	cmp r0, r2 @ done
+	cmp r1, r3
+	cmp r2, r4
+	cmp r3, r5
+
+	cmp r0, r8 @ done
 	cmp r1, r9
 	cmp r2, r10
 	cmp r3, r11
@@ -156,10 +161,11 @@ _l3:
 
 	ISB
 
-	ldm r0!, {r1, r2, r3, r4}
-	ldm r0!, {r4, r5, r6, r7}
-	ldm r1!, {r5, r7}
-	ldm r1!, {r2, r3, r4, r5, r6, r7}
+	LDM r0!, {r1, r2, r3, r4} @ done
+	LDM r0!, {r4, r5, r6, r7}
+	LDM r1!, {r5, r7}
+	LDM r1!, {r2, r3, r4, r5, r6, r7}
+	LDM r2, {r1, r2, r3, r4, r5, r6, r7}
 
 	ldr r3, [r1, #4]
 	ldr r4, [r2, #8]
@@ -282,7 +288,7 @@ _l3:
 
 	nop 
 
-	orrs r0, r1 
+	orrs r0, r1 @ done
 	orrs r1, r2
 	orrs r2, r3
 	orrs r3, r4
@@ -389,17 +395,17 @@ _l3:
 	sub sp, sp, #64
 	sub sp, sp, #128
 
-	svc #32
+	svc #32 @ done
 	svc #64
 	svc #128
 	svc #255
 
-	sxtb r0, r1
+	sxtb r0, r1 @ done
 	sxtb r2, r3
 	sxtb r3, r4
 	sxtb r4, r5
 
-	sxth r0, r1
+	sxth r0, r1 @ done
 	sxth r2, r3
 	sxth r3, r4
 	sxth r4, r5
@@ -409,7 +415,7 @@ _l3:
 	tst r3, r4
 	tst r4, r5
 
-	udf #32
+	udf #32 @ done
 	udf #64
 	udf #128
 	udf #255
