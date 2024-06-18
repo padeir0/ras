@@ -20,73 +20,73 @@ _reset:
 	mov r8, r8
 	mov r8, r8
 
-	adcs r0, r1
+	adcs r0, r1 @ done
 	adcs r1, r2
 	adcs r2, r3
 	adcs r3, r4
 
-	adds r0, #16
+	adds r0, #16 @ done
 	adds r1, #32
 	adds r2, #64
 	adds r3, #128
 
-	adds r0, r1, #2
+	adds r0, r1, #2 @ done
 	adds r1, r2, #3
 	adds r2, r3, #4
 	adds r3, r4, #5
 
-	adds r0, r1, r2
+	adds r0, r1, r2 @ done
 	adds r2, r3, r4
 	adds r4, r5, r6
 	adds r7, r0, r1
 
-	add r0, r1
+	add r0, r1 @ done
 	add r1, r2
 	add r2, r3
 	add sp, r4
 
-	add r0, sp, #32
+	add r0, sp, #32 @ done
 	add r1, sp, #64
 	add r2, sp, #128
 	add r3, sp, #256
 
-	add sp, sp, #16
+	add sp, sp, #16 @ done
 	add sp, sp, #32
 	add sp, sp, #64
 	add sp, sp, #128
 
-	add r0, sp, r0
+	add r0, sp, r0 @ done
 	add r1, sp, r1
 	add r2, sp, r2
 	add r3, sp, r3
 
-	add sp, r0
+	add sp, r0 @ done
 	add sp, r1
 	add sp, r2
 	add sp, r3
 _l0:
-	add r0, pc, #32
+	add r0, pc, #32 @ done
 	add r1, pc, #64
 	add r2, pc, #128
 	add r3, pc, #256
 _l1:
-	ands r0, r1
+	ands r0, r1 @ done
 	ands r1, r2
 	ands r2, r3
 	ands r3, r4
 _l2:
-	asrs r0, r1, #4
-	asrs r1, r2, #8
+	asrs r0, r3, #0 @ done
+	asrs r1, r2, #4
 	asrs r2, r3, #16
-	asrs r3, r4, #32
-
+	asrs r3, r4, #31
+	asrs r1, r2, #32
 _l3:
-	asrs r0, r1
+	asrs r0, r1 @ done
 	asrs r1, r2
 	asrs r2, r3
 	asrs r3, r4
 
-	beq _l0
+	beq _l0 @done
 	bne _l1
 	bcs _l2
 	bcc _l3
@@ -126,7 +126,7 @@ _l3:
 	blx r2
 	blx r3
 
-	bx r0
+	bx r0 
 	bx r1
 	bx r2
 	bx r3
@@ -136,7 +136,7 @@ _l3:
 	cmn r2, r3
 	cmn r3, r4
 
-	cmp r0, #32
+	cmp r0, #32 
 	cmp r1, #64
 	cmp r2, #128
 	cmp r3, #255
@@ -149,9 +149,6 @@ _l3:
 	DMB
 	DSB
 
-	/* REMAINING FROM */
-	/* A6.7.23 EOR (register) */
-	
 	eors r1, r2
 	eors r2, r3
 	eors r3, r4
@@ -174,7 +171,7 @@ _l3:
 	ldr r5, [sp, #64]
 	ldr r6, [sp, #128]
 
-	ldr r0, =0xdeadbeef
+	ldr r0, =0xdeadbeef 
 	ldr r1, =0xcafebabe
 	ldr r2, =0xdeadbabe
 	ldr r3, =0xbabebeef
@@ -214,7 +211,7 @@ _l3:
 	ldrsh r4, [r5, r6]
 	ldrsh r5, [r6, r7]
 
-	lsls r0, r1, #4
+	lsls r0, r1, #4 
 	lsls r1, r2, #8
 	lsls r2, r3, #16
 	lsls r3, r4, #31
@@ -234,17 +231,17 @@ _l3:
 	lsrs r2, r3
 	lsrs r3, r4
 
-	movs r0, #32
+	movs r0, #32 
 	movs r1, #64
 	movs r2, #128
 	movs r3, #255
 
-	mov r0, r7
+	mov r0, r7 
 	mov r8, r1
 	mov r2, r9
 	mov r10, r3
 
-	movs r0, r1
+	movs r0, r1 
 	movs r1, r2
 	movs r2, r3
 	movs r3, r4
@@ -283,9 +280,9 @@ _l3:
 	mvns r3, r2
 	mvns r4, r3
 
-	nop
+	nop 
 
-	orrs r0, r1
+	orrs r0, r1 
 	orrs r1, r2
 	orrs r2, r3
 	orrs r3, r4
@@ -337,7 +334,7 @@ _l3:
 	stm r1!, {r5, r7}
 	stm r1!, {r2, r3, r4, r5, r6, r7}
 
-	str r0, [r1, #4]
+	str r0, [r1, #4] 
 	str r5, [r2, #8]
 	str r6, [r3, #16]
 	str r7, [r4, #32]
@@ -372,12 +369,12 @@ _l3:
 	strh r3, [r4, r3]
 	strh r4, [r5, r4]
 
-	subs r0, r1, #0
+	subs r0, r1, #0 
 	subs r1, r2, #1
 	subs r3, r4, #2
 	subs r4, r5, #3
 
-	subs r0, #32
+	subs r0, #32 
 	subs r1, #64
 	subs r3, #128
 	subs r4, #255

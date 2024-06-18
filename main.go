@@ -114,6 +114,30 @@ type instr struct {
 	chunk []byte
 }
 
+const (
+	bits15_12 uint16 = 0b1111_0000_0000_0000
+	bits15_11 uint16 = 0b1111_1000_0000_0000
+	bits15_10 uint16 = 0b1111_1100_0000_0000
+	bits15_9  uint16 = 0b1111_1110_0000_0000
+	bits15_8  uint16 = 0b1111_1111_0000_0000
+	bits15_7  uint16 = 0b1111_1111_1000_0000
+	bits15_6  uint16 = 0b1111_1111_1100_0000
+
+	bits7_0 uint16 = 0b0000_0000_1111_1111
+	bits6_0 uint16 = 0b0000_0000_0111_1111
+
+	bits6_3 uint16 = 0b0000_0000_0111_1000
+
+	bits11_8 uint16 = 0b0000_1111_0000_0000
+	bits10_8 uint16 = 0b0000_0111_0000_0000
+	bits10_6 uint16 = 0b0000_0111_1100_0000
+	bits8_6  uint16 = 0b0000_0001_1100_0000
+	bits5_3  uint16 = 0b0000_0000_0011_1000
+	bits2_0  uint16 = 0b0000_0000_0000_0111
+
+	bit7 uint16 = 0b0000_0000_1000_0000
+)
+
 func decodeInstr(rb *ReadBuffer, out *instr) bool {
 	hw, ok := rb.getU16()
 	if !ok {
@@ -126,75 +150,137 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 	out.text = "???"
 	out.size = 2
 
-	if first&0b1111_1000 == 0b0010_0000 { // movs Rd, #imm8
-		rd := first & 0b0000_0111
-		out.text = fmt.Sprintf("movs %s, #%v", reg(rd), last)
+	if hw&bits15_6 == 0b0100_0001_0100_0000 { // ADCS <Rdn>, <Rm>
+		rm := (hw & bits5_3) >> 3
+		rdn := hw & bits2_0
+		out.text = fmt.Sprintf("ADCS %v, %v", reg(rdn), reg(rm))
 	}
 
-	if first == 0b0100_0110 { // mov Rd, Rm
-		rm := (last & 0b0111_1000) >> 3
-		rd := ((last & 0b1000_0000) >> 4) | (last & 0b0000_0111)
-		out.text = fmt.Sprintf("mov %s, %s", reg(rd), reg(rm))
+	if hw&bits15_9 == 0b0001_1100_0000_0000 { // ADDS <Rd>, <Rn>, #<imm3>
+		imm3 := (hw & bits8_6) >> 6
+		rn := (hw & bits5_3) >> 3
+		rd := hw & bits2_0
+		out.text = fmt.Sprintf("ADDS %v, %v, #%v", reg(rd), reg(rn), imm3)
 	}
 
-	if first&0b1111_1000 == 0b0100_1000 { // ldr Rt, [PC, #imm8]
-		rt := first & 0b0000_0111
-		imm32 := uint32(last) << 2
-		out.text = fmt.Sprintf("ldr %s, [pc, #%02X]", reg(rt), imm32)
+	if hw&bits15_11 == 0b0011_0000_0000_0000 { // ADDS <Rdn>, #<imm8>
+		imm8 := hw & bits7_0
+		rdn := (hw & bits10_8) >> 8
+		out.text = fmt.Sprintf("ADDS %v, #%v", reg(rdn), imm8)
 	}
 
-	if first == 0b1011_1111 && last == 0b0000_0000 { // nop
-		out.text = "nop"
+	if hw&bits15_9 == 0b0001_1000_0000_0000 { // ADDS <Rd>, <Rn>, <Rm>
+		rm := (hw & bits8_6) >> 6
+		rn := (hw & bits5_3) >> 3
+		rd := (hw & bits2_0)
+		out.text = fmt.Sprintf("ADDS %v, %v, %v", reg(rd), reg(rn), reg(rm))
 	}
 
-	if first == 0b0100_0011 && last&0b1100_0000 == 0 { // ORR rdn, rm
-		rm := (last & 0b0011_1000) >> 3
-		rdn := (last & 0b00000_0111)
-		out.text = fmt.Sprintf("orr %s, %s", reg(rdn), reg(rm))
+	if hw&bits15_8 == 0b0100_0100_0000_0000 { // ADD <Rdn>, <Rm>
+		DN := (hw & bit7) >> 4
+		rdn := hw & bits2_0
+		d := DN | rdn
+		rm := (hw & bits6_3) >> 3
+		out.text = fmt.Sprintf("ADD %v, %v", reg(d), reg(rm))
 	}
 
-	if first&0b1111_1000 == 0b0110_0000 { // str rt, [rn, #imm5]
-		rn := (last & 0b0011_1000) >> 3
-		rt := (last & 0b0000_0111)
-		imm5 := ((first & 0b0000_0111) << 2) | ((last & 0b1100_0000) >> 6)
-		imm32 := uint32(imm5) << 2
-		out.text = fmt.Sprintf("str %s, [%s, #%v]", reg(rt), reg(rn), imm32)
+	if hw&bits15_11 == 0b1010_1000_0000_0000 { // ADD <Rd>, SP, #<imm8>
+		rd := (hw & bits10_8) >> 8
+		imm8 := (hw & bits7_0) << 2
+		out.text = fmt.Sprintf("ADD %v, SP, %v", reg(rd), imm8)
 	}
 
-	if first&0b1111_1000 == 0 { // lsl rd, rm, #imm5
-		imm5 := ((first & 0b0000_0111) << 2) | ((last & 0b1100_0000) >> 6)
-		rm := (last & 0b0011_1000) >> 3
-		rd := (last & 0b0000_0111)
-		out.text = fmt.Sprintf("lsl %s, %s, #%v", reg(rd), reg(rm), imm5)
+	if hw&bits15_11 == 0b1011_0000_0000_0000 { // ADD SP, SP, #<imm7>
+		imm7 := (hw & bits6_0) << 2
+		out.text = fmt.Sprintf("ADD SP, SP, %v", imm7)
 	}
 
-	if first&0b1111_1110 == 0b0001_1110 { // sub rd, rn, #imm3
-		imm3 := ((first & 0b0000_0001) << 2) | ((last & 0b1100_0000) >> 6)
-		rn := (last & 0b0011_1000) >> 3
-		rd := (last & 0b0000_0111)
-
-		out.text = fmt.Sprintf("sub %s, %s, #%v", reg(rd), reg(rn), imm3)
+	if hw&(bits15_8|bits6_3) == 0b0100_0100_0110_1000 { // ADD <Rdm>, SP, <Rdm>
+		DM := (hw & bit7) >> 4
+		Rdm := (hw & bits2_0)
+		d := DM | Rdm
+		out.text = fmt.Sprintf("ADD %v, SP, %v", d, d)
 	}
 
-	if first&0b1111_1000 == 0b0011_1000 { // sub rdn, #imm8
-		rdn := first & 0b0000_0111
-		out.text = fmt.Sprintf("sub %s, #%v", reg(rdn), last)
+	if hw&(bits15_7|bits2_0) == 0b0100_0100_1000_0101 { // ADD SP, <rm>
+		rm := (hw & bits6_3) >> 3
+		out.text = fmt.Sprintf("ADD SP, %v", reg(rm))
 	}
 
-	if first&0b1111_1000 == 0b0010_1000 { // cmp rn, #imm8
-		rn := first & 0b0000_0111
-		out.text = fmt.Sprintf("cmp %s, #%v", reg(rn), last)
+	if hw&bits15_11 == 0b1010_0000_0000_0000 { // ADR <Rd>, PC, #<const>
+		rd := (hw & bits10_8) >> 8
+		imm8 := (hw & bits7_0) << 2
+		out.text = fmt.Sprintf("ADR %v, PC, #%v", reg(rd), imm8)
 	}
 
-	if first == 0b0100_0111 && last&0b1000_0000 == 0 { // bx rm
-		rm := last & 0b0111_1000 >> 3
-		out.text = fmt.Sprintf("bx %s", reg(rm))
+	if hw&bits15_6 == 0b0100_0000_0000_0000 { // ANDS <Rdn>, <Rm>
+		rdn := hw & bits2_0
+		rm := (hw & bits5_3) >> 3
+		out.text = fmt.Sprintf("ANDS %v, %v", reg(rdn), reg(rm))
 	}
 
+	if hw&bits15_11 == 0b0001_0000_0000_0000 { // ASRS <Rd>, <Rm>, #<imm5>
+		rm := (hw & bits5_3) >> 3
+		rd := hw & bits2_0
+		imm5 := (hw & bits10_6) >> 6
+
+		out.text = fmt.Sprintf("ASRS %v, %v, #%v", reg(rd), reg(rm), imm5)
+	}
+
+	if hw&bits15_6 == 0b0100_0001_0000_0000 { // ASRS <Rdn>, <Rm>
+		rm := (hw & bits5_3) >> 3
+		rdn := hw & bits2_0
+		out.text = fmt.Sprintf("ASRS %v, %v", reg(rdn), reg(rm))
+	}
+
+	if hw&bits15_12 == 0b1101_0000_0000_0000 { // B<c> <label>
+		c := uint8((hw & bits11_8) >> 8)
+		imm8 := int8((hw & bits7_0) << 1)
+		out.text = fmt.Sprintf("B%v <PC, %v>", cond(c), imm8)
+	}
 	return true
 }
 
-func reg(r uint8) string {
+func cond(nibble uint8) string {
+	cond := nibble & 0b0000_1111
+
+	switch cond {
+	case 0b0000:
+		return "EQ"
+	case 0b0001:
+		return "NE"
+	case 0b0010:
+		return "CS"
+	case 0b0011:
+		return "CC"
+	case 0b0100:
+		return "MI"
+	case 0b0101:
+		return "PL"
+	case 0b0110:
+		return "VS"
+	case 0b0111:
+		return "VC"
+	case 0b1000:
+		return "HI"
+	case 0b1001:
+		return "LS"
+	case 0b1010:
+		return "GE"
+	case 0b1011:
+		return "LT"
+	case 0b1100:
+		return "GT"
+	case 0b1101:
+		return "LE"
+	case 0b1110:
+		return "?"
+	default:
+		return "!"
+	}
+}
+
+func reg(r uint16) string {
 	if r == 13 {
 		return "sp"
 	}
