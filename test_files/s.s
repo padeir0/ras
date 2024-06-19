@@ -178,7 +178,7 @@ _l3:
 	ldr r6, [sp, #128]
 
 	ldr r0, =0xdeadbeef @ done
-	ldr r1, =0xcafebabe
+	ldr r1, =0xfecababe
 	ldr r2, =0xdeadbabe
 	ldr r3, =0xbabebeef
 
@@ -298,32 +298,32 @@ _l3:
 	negs r2, r3
 	negs r3, r4
 
-	pop {r0, r1, r2, r3, r4, r5}
+	pop {r0, r1, r2, r3, r4, r5} @ done
 	pop {r3, r4, r5}
 	pop {r0, r1, pc}
 	pop {pc}
 
-	push {r0, r1, r2, r3, r4, r5}
+	push {r0, r1, r2, r3, r4, r5} @ done
 	push {r3, r4, r5}
 	push {r0, r1, lr}
 	push {lr}
 
-	rev r0, r1
+	rev r0, r1 @ done
 	rev r1, r2
 	rev r2, r3
 	rev r3, r4
 
-	rev16 r0, r1
+	rev16 r0, r1 @ done
 	rev16 r1, r2
 	rev16 r2, r3
 	rev16 r3, r4
 
-	revsh r0, r1
+	revsh r0, r1 @ done
 	revsh r1, r2
 	revsh r2, r3
 	revsh r3, r4
 
-	rors r0, r1
+	rors r0, r1 @ done
 	rors r1, r2
 	rors r2, r3
 	rors r3, r4
@@ -333,69 +333,69 @@ _l3:
 	rsbs r2, r3, #0
 	rsbs r3, r4, #0
 
-	sbcs r0, r1
+	sbcs r0, r1 @ done
 	sbcs r1, r2
 	sbcs r2, r3
 	sbcs r3, r4
 
-	sev
+	sev @ done
 
-	stm r0!, {r1, r2, r3, r4}
+	stm r0!, {r1, r2, r3, r4} @ done
 	stm r0!, {r4, r5, r6, r7}
 	stm r1!, {r5, r7}
 	stm r1!, {r2, r3, r4, r5, r6, r7}
 
-	str r0, [r1, #4] 
+	str r0, [r1, #4] @done
 	str r5, [r2, #8]
 	str r6, [r3, #16]
 	str r7, [r4, #32]
 
-	str r0, [sp, #32]
+	str r0, [sp, #32] @ done
 	str r5, [sp, #64]
 	str r6, [sp, #128]
 	str r7, [sp, #256]
 
-	str r0, [r1, r0]
+	str r0, [r1, r0] @ done
 	str r2, [r3, r2]
 	str r3, [r4, r3]
 	str r4, [r5, r4]
 
-	strb r0, [r1, #4]
+	strb r0, [r1, #4] @ done
 	strb r5, [r2, #8]
 	strb r6, [r3, #16]
 	strb r7, [r4, #31]
 
-	strb r0, [r1, r0]
-	strb r2, [r3, r2]
-	strb r3, [r4, r3]
-	strb r4, [r5, r4]
+	strb r0, [r1, r2] @ done
+	strb r2, [r3, r4]
+	strb r3, [r4, r5]
+	strb r4, [r5, r6]
 
-	strh r0, [r1, #4]
+	strh r0, [r1, #4] @ done
 	strh r5, [r2, #8]
 	strh r6, [r3, #16]
 	strh r7, [r4, #32]
 
-	strh r0, [r1, r0]
-	strh r2, [r3, r2]
-	strh r3, [r4, r3]
-	strh r4, [r5, r4]
+	strh r0, [r1, r2] @ done
+	strh r2, [r3, r4]
+	strh r3, [r4, r5]
+	strh r4, [r5, r6]
 
-	subs r0, r1, #0 
+	subs r0, r1, #0 @ done
 	subs r1, r2, #1
 	subs r3, r4, #2
 	subs r4, r5, #3
 
-	subs r0, #32 
+	subs r0, #32 @ done
 	subs r1, #64
 	subs r3, #128
 	subs r4, #255
 
-	subs r0, r1, r0
-	subs r2, r3, r2
-	subs r3, r4, r3
-	subs r4, r5, r4
+	subs r0, r1, r2 @ done
+	subs r2, r3, r4
+	subs r3, r4, r5
+	subs r4, r5, r6
 
-	sub sp, sp, #16
+	sub sp, sp, #16 @ done
 	sub sp, sp, #32
 	sub sp, sp, #64
 	sub sp, sp, #128
@@ -415,7 +415,7 @@ _l3:
 	sxth r3, r4
 	sxth r4, r5
 
-	tst r0, r1
+	tst r0, r1 @ done
 	tst r2, r3
 	tst r3, r4
 	tst r4, r5
@@ -425,17 +425,17 @@ _l3:
 	udf #128
 	udf #255
 
-	uxtb r0, r1
+	uxtb r0, r1 @ done
 	uxtb r2, r3
 	uxtb r3, r4
 	uxtb r4, r5
 
-	uxth r0, r1
+	uxth r0, r1 @ done
 	uxth r2, r3
 	uxth r3, r4
 	uxth r4, r5
 
-	wfe
-	wfi
-	yield
+	wfe @ done
+	wfi @ done
+	yield @ done
 .align 4
