@@ -151,15 +151,15 @@ _l3:
 	cmp r2, r10
 	cmp r3, r11
 
-	DMB
-	DSB
+	DMB @ done
+	DSB @ done
 
 	eors r1, r2 @ done
 	eors r2, r3
 	eors r3, r4
 	eors r4, r5
 
-	ISB
+	ISB @ done
 
 	LDM r0!, {r1, r2, r3, r4} @ done
 	LDM r0!, {r4, r5, r6, r7}

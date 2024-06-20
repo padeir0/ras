@@ -154,6 +154,7 @@ type instr struct {
 }
 
 const (
+	bits15_14 uint16 = 0b1100_0000_0000_0000
 	bits15_12 uint16 = 0b1111_0000_0000_0000
 	bits15_11 uint16 = 0b1111_1000_0000_0000
 	bits15_10 uint16 = 0b1111_1100_0000_0000
@@ -165,20 +166,26 @@ const (
 	bits15_4  uint16 = 0b1111_1111_1111_0000
 
 	bits10_0 uint16 = 0b0000_0111_1111_1111
+	bits9_0  uint16 = 0b0000_0011_1111_1111
 	bits7_0  uint16 = 0b0000_0000_1111_1111
 	bits6_0  uint16 = 0b0000_0000_0111_1111
-
-	bits6_3 uint16 = 0b0000_0000_0111_1000
 
 	bits11_8 uint16 = 0b0000_1111_0000_0000
 	bits10_8 uint16 = 0b0000_0111_0000_0000
 	bits10_6 uint16 = 0b0000_0111_1100_0000
 	bits8_6  uint16 = 0b0000_0001_1100_0000
+	bits6_3  uint16 = 0b0000_0000_0111_1000
 	bits5_3  uint16 = 0b0000_0000_0011_1000
+	bits3_0  uint16 = 0b0000_0000_0000_1111
 	bits2_0  uint16 = 0b0000_0000_0000_0111
 
-	bit8 uint16 = 0b0000_0001_0000_0000
-	bit7 uint16 = 0b0000_0000_1000_0000
+	bit13 uint16 = 0b0010_0000_0000_0000
+	bit12 uint16 = 0b0001_0000_0000_0000
+	bit11 uint16 = 0b0000_1000_0000_0000
+	bit10 uint16 = 0b0000_0100_0000_0000
+	bit9  uint16 = 0b0000_0010_0000_0000
+	bit8  uint16 = 0b0000_0001_0000_0000
+	bit7  uint16 = 0b0000_0000_1000_0000
 )
 
 func Disassemble(m *memoryMap) string {
@@ -638,7 +645,7 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 		imm8 := hw & bits7_0
 		rdn := (hw & bits10_8) >> 8
 
-		out.text = fmt.Sprintf("SUBS %v, #%02X", rdn, imm8)
+		out.text = fmt.Sprintf("SUBS %v, #%02X", reg(rdn), imm8)
 	}
 
 	if hw&bits15_9 == 0b0001_1010_0000_0000 { // SUBS <rd>, <rn>, <rm>
@@ -698,6 +705,7 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 	if hw&bits15_11 == 0b1111_0000_0000_0000 { // 32 bit instruction
 		hw2, ok := rb.getU16()
 		if !ok {
+			out.text = fmt.Sprintf("32 bit instruction")
 			return false
 		}
 
@@ -707,22 +715,55 @@ func decodeInstr(rb *ReadBuffer, out *instr) bool {
 		out.chunk = append([]byte{first, last}, out.chunk...)
 		out.size += 2
 		out.text = fmt.Sprintf("32 bit instruction")
-		if false { // BL <label>
+		if hw2&(bits15_14|bit12) == 0b1101_0000_0000_0000 { // BL <label>
+			imm10 := uint32(hw & bits9_0)
+			S := (hw & bit10) >> 10
+
+			imm11 := uint32(hw2 & bits10_0)
+			J1 := (hw2 & bit13) >> 13
+			J2 := (hw2 & bit11) >> 11
+
+			I1 := uint32(^(J1 ^ S)) // why??
+			I2 := uint32(^(J2 ^ S))
+
+			u24 := (uint32(S) << 23) | (I1 << 22) | (I2 << 21) | (imm10 << 11) | imm11
+			i32 := int32(u24<<8) >> 8
+
+			imm32 := i32 << 1
+
+			out.text = fmt.Sprintf("BL [PC, #%04X]", imm32)
 		}
 
-		if hw == 0b1111_0011_1011_1111 { // DMB
-		}
-
-		if hw == 0b1111_0011_1011_1111 { // DSB
-		}
-
-		if hw == 0b1111_0011_1011_1111 { // ISB
+		if hw == 0b1111_0011_1011_1111 { // DMB / DSB
+			if hw2&bits15_4 == 0b1000_1111_0101_0000 {
+				out.text = "DMB"
+			} else if hw2&bits15_4 == 0b1000_1111_0100_0000 {
+				out.text = "DSB"
+			} else if hw2&bits15_4 == 0b1000_1111_0110_0000 {
+				out.text = "ISB"
+			} else {
+				out.text = "!!!"
+			}
 		}
 
 		if hw == 0b1111_0011_1110_1111 { // MRS <rd>, <spec_reg>
+			if hw2&bits15_12 == 0b1000_0000_0000_0000 {
+				rd := (hw2 & bits15_12) >> 12
+				SYSm := uint8(hw2 & bits7_0)
+				out.text = fmt.Sprintf("MRS %v, <%08b>", reg(rd), SYSm)
+			} else {
+				out.text = "!!!"
+			}
 		}
 
 		if hw&bits15_4 == 0b1111_0011_1000_0000 { // MSR <spec_reg>, <rn>
+			if hw2&bits15_8 == 0b1000_1000_0000_0000 {
+				rn := hw & bits3_0
+				SYSm := uint8(hw & bits7_0)
+				out.text = fmt.Sprintf("MSR <%08b>, %v", SYSm, reg(rn))
+			} else {
+				out.text = "!!!"
+			}
 		}
 	}
 
