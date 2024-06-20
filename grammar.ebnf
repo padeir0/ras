@@ -1,0 +1,37 @@
+Module = {Const {NL}} {Section}.
+Const = id '=' num.
+Section = SectionHeader {NL} Code.
+SectionHeader = 'section' id 'at' num ':'.
+Code = {Statement | NL}.
+
+Statement = (DefLabel | Instr | Mem) NL.
+
+Mem = '$' num size | str.
+
+DefLabel = id ':'.
+Instr = Operator OperandList.
+Operator = id.
+OperandList = Operand {',' Operand}.
+Operand = Term | Addr | RegList | Label | Sugar.
+Sugar = '=' term.
+Addr = '[' TermList ']'.
+TermList = Term {',' Term}.
+Term = reg | num | char.
+
+id = letter {letterDigit}.
+reg = 'r' decimal.
+lit = '#' ('+' | '-') num.
+char = "'" (ascii|escapes) "'".
+str = '"' {ascii|escapes} '"'.
+
+size = 'w' | 'hw' | 'b' | 'word' | 'halfword' | 'byte'.
+num = hex|bin|decimal.
+decimal = decDigit {decDigit}.
+hex = '0x' hexDigit {hexDigit}.
+bin = '0b' binDigit {binDigit}.
+
+decDigit = '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'.
+hexDigit = decDigit |'A'|'B'|'C'|'D'|'E'|'F'.
+binDigit = '0' | '1'.
+
+NL = ['\r'] '\n'.
